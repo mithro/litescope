@@ -28,6 +28,8 @@ class LiteScopeAnalyzerDriver:
             t, g, n, v = item
             if t == "config":
                 setattr(self, n, int(v))
+                if self.debug:
+                    print("{} = {}".format(n, getattr(self, n)))
 
     def get_layouts(self):
         self.layouts = {}
@@ -74,12 +76,18 @@ class LiteScopeAnalyzerDriver:
         self.frontend_subsampler_value.write(value-1)
 
     def run(self, offset, length):
+        length = min(self.depth, length)
+
+        if self.debug:
+            print("[flushing]...")
         while self.storage_mem_valid.read():
             self.storage_mem_ready.write(1)
         if self.debug:
             print("[running]...")
         self.storage_offset.write(offset)
         self.storage_length.write(length)
+        rlength = self.storage_length.read()
+        assert length == rlength, "{} != {}".format(length, rlength)
         self.storage_start.write(1)
 
     def done(self):
